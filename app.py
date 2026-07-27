@@ -13,11 +13,11 @@ load_dotenv()
 
 st.set_page_config(
     page_title="Monday BI Agent",
-    page_icon="📊",
+    page_icon="♔",
     layout="wide"
 )
 
-st.title("📊 Monday Business Intelligence Agent")
+st.title(" Monday Business Intelligence Agent")
 
 # ----------------------------
 # Load System Prompt
