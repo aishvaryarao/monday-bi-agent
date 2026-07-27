@@ -39,23 +39,45 @@ class MondayClient:
         }
         """
 
-        response = httpx.post(
-            self.BASE_URL,
-            headers=self.headers,
-            json={
-                "query": query,
-                "variables": {
-                    "board_id": str(board_id)
-                }
-            },
-            timeout=30
-        )
+        try:
+            response = httpx.post(
+                self.BASE_URL,
+                headers=self.headers,
+                json={
+                    "query": query,
+                    "variables": {
+                        "board_id": str(board_id)
+                    }
+                },
+                timeout=30
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
+
+        except httpx.TimeoutException:
+            raise Exception(
+                "The request to Monday.com timed out. Please try again."
+            )
+
+        except httpx.RequestError:
+            raise Exception(
+                "Unable to connect to Monday.com. Please check your internet connection."
+            )
+
+        except httpx.HTTPStatusError as e:
+            raise Exception(
+                f"Monday.com API returned an error (Status Code: {e.response.status_code})."
+            )
 
         data = response.json()
 
         if "errors" in data:
-            raise Exception(data["errors"])
+            error_message = data["errors"][0].get("message", "Unknown GraphQL error.")
+            raise Exception(f"Monday.com Error: {error_message}")
 
-        return data["data"]["boards"][0]["items_page"]["items"]
+        try:
+            return data["data"]["boards"][0]["items_page"]["items"]
+        except (KeyError, IndexError):
+            raise Exception(
+                "Unable to retrieve board data. Please verify that the board ID is correct."
+            )

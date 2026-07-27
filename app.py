@@ -17,33 +17,75 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title(" Monday Business Intelligence Agent")
+st.title("♔ Monday.com Business Intelligence Agent")
+
+# ----------------------------
+# Validate Environment Variables
+# ----------------------------
+required_vars = [
+    "MONDAY_API_TOKEN",
+    "GEMINI_API_KEY",
+    "DEALS_BOARD_ID",
+    "WORK_ORDERS_BOARD_ID"
+]
+
+missing = [var for var in required_vars if not os.getenv(var)]
+
+if missing:
+    st.error(f"Missing environment variables: {', '.join(missing)}")
+    st.stop()
 
 # ----------------------------
 # Load System Prompt
 # ----------------------------
-system_prompt = Path("prompts/system_prompt.txt").read_text(
-    encoding="utf-8"
-)
+try:
+    system_prompt = Path("prompts/system_prompt.txt").read_text(
+        encoding="utf-8"
+    )
+except Exception as e:
+    st.error(f"Unable to load system prompt: {e}")
+    st.stop()
 
 # ----------------------------
 # Fetch Data from Monday.com
 # ----------------------------
-client = MondayClient()
+try:
+    client = MondayClient()
 
-deals_items = client.get_board_items(
-    os.getenv("DEALS_BOARD_ID")
-)
+    deals_items = client.get_board_items(
+        os.getenv("DEALS_BOARD_ID")
+    )
 
-work_orders_items = client.get_board_items(
-    os.getenv("WORK_ORDERS_BOARD_ID")
-)
+    work_orders_items = client.get_board_items(
+        os.getenv("WORK_ORDERS_BOARD_ID")
+    )
 
-deals_df = DataCleaner.board_to_dataframe(deals_items)
-work_orders_df = DataCleaner.board_to_dataframe(work_orders_items)
+except Exception as e:
+    st.error(f"Failed to retrieve data from Monday.com.\n\n{e}")
+    st.stop()
 
-deals_df = DataCleaner.clean_dataframe(deals_df)
-work_orders_df = DataCleaner.clean_dataframe(work_orders_df)
+# ----------------------------
+# Clean Data
+# ----------------------------
+try:
+    deals_df = DataCleaner.board_to_dataframe(deals_items)
+    work_orders_df = DataCleaner.board_to_dataframe(work_orders_items)
+
+    deals_df = DataCleaner.clean_dataframe(deals_df)
+    work_orders_df = DataCleaner.clean_dataframe(work_orders_df)
+
+except Exception as e:
+    st.error(f"Error while processing data: {e}")
+    st.stop()
+
+# ----------------------------
+# Check Empty Data
+# ----------------------------
+if deals_df.empty:
+    st.warning("Deals board contains no data.")
+
+if work_orders_df.empty:
+    st.warning("Work Orders board contains no data.")
 
 # ----------------------------
 # Initialize Services
@@ -80,9 +122,10 @@ if prompt := st.chat_input("Ask a business question..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    business_summary = analyzer.summary()
+    try:
+        business_summary = analyzer.summary()
 
-    final_prompt = f"""
+        final_prompt = f"""
 {system_prompt}
 
 Business Summary:
@@ -94,7 +137,13 @@ User Question:
 Answer as a business intelligence assistant.
 """
 
-    response = gemini.generate_response(final_prompt)
+        response = gemini.generate_response(final_prompt)
+
+    except Exception:
+        response = (
+            "Sorry, I couldn't process your request at the moment. "
+            "Please try again later."
+        )
 
     with st.chat_message("assistant"):
         st.markdown(response)

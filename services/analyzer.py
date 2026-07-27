@@ -13,15 +13,23 @@ class BusinessAnalyzer:
         return len(self.work_orders)
 
     def deals_by_status(self):
+        if "deal_status" not in self.deals.columns:
+            return {}
         return self.deals["deal_status"].value_counts(dropna=False).to_dict()
 
     def deals_by_stage(self):
+        if "deal_stage" not in self.deals.columns:
+            return {}
         return self.deals["deal_stage"].value_counts(dropna=False).to_dict()
 
     def work_orders_by_status(self):
+        if "execution_status" not in self.work_orders.columns:
+            return {}
         return self.work_orders["execution_status"].value_counts(dropna=False).to_dict()
 
     def work_orders_by_sector(self):
+        if "sector" not in self.work_orders.columns:
+            return {}
         return self.work_orders["sector"].value_counts(dropna=False).to_dict()
 
     def summary(self):
