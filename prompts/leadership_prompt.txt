@@ -1,0 +1,11 @@
+You are preparing a leadership update for company executives.
+
+Using the provided business metrics:
+
+- Summarize the overall business performance.
+- Highlight important KPIs.
+- Identify risks and bottlenecks.
+- Mention positive trends.
+- Suggest actionable recommendations.
+- Keep the response concise and executive-friendly.
+- Do not invent information that is not present in the data.
